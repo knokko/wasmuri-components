@@ -22,6 +22,16 @@ pub struct TextButton {
     on_click: Box<dyn FnMut(&mut dyn TextRenderHelper, &mut ComponentAgent, &MouseClickEvent, &ContainerManager)>
 }
 
+impl TextButton {
+
+    pub fn new(render_helper: Box<dyn TextRenderHelper>, on_click: Box<dyn FnMut(&mut dyn TextRenderHelper, &mut ComponentAgent, &MouseClickEvent, &ContainerManager)>) -> TextButton {
+        TextButton {
+            render_helper,
+            on_click
+        }
+    }
+}
+
 impl Component for TextButton {
 
     fn attach(&mut self, agent: &mut LayerAgent){
@@ -35,6 +45,10 @@ impl Component for TextButton {
 
     fn render(&mut self, _gl: &WebGlRenderingContext, _agent: &mut ComponentAgent, _event: &RenderEvent, _manager: &ContainerManager) -> Option<Cursor> {
         self.render_helper.render();
+        Some(Cursor::POINTER)
+    }
+
+    fn get_cursor(&mut self, _agent: &mut ComponentAgent, _event: &RenderEvent, _manager: &ContainerManager) -> Option<Cursor> {
         Some(Cursor::POINTER)
     }
 }
