@@ -1,0 +1,19 @@
+[package]
+name = "wasmuri-components"
+version = "0.1.0"
+authors = ["knokko <knokogator@hotmail.com>"]
+edition = "2018"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+wasmuri-core = { path="../core" }
+wasmuri-container = { path="../container" }
+wasmuri-events = { path="../events" }
+wasmuri-text = { path="../text" }
+
+
+
+[dependencies.web-sys]
+version = "0.3"
+features = [ "CssStyleDeclaration", "HtmlElement", "HtmlCanvasElement", "WebGlRenderingContext" ]
