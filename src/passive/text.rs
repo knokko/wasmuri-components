@@ -3,7 +3,10 @@ use crate::helper::render::text::TextRenderHelper;
 use wasmuri_container::Component;
 use wasmuri_container::Cursor;
 use wasmuri_container::layer::LayerAgent;
-use wasmuri_container::params::RenderParams;
+use wasmuri_container::params::{
+    CursorParams,
+    RenderParams
+};
 
 pub struct PassiveText {
 
@@ -19,5 +22,18 @@ impl Component for PassiveText {
     fn render(&mut self, params: &mut RenderParams) -> Option<Cursor> {
         self.render_helper.render(params);
         None
+    }
+
+    fn get_cursor(&mut self, _params: &mut CursorParams) -> Option<Cursor> {
+        None
+    }
+}
+
+impl PassiveText {
+
+    pub fn new(render_helper: Box<dyn TextRenderHelper>) -> PassiveText {
+        PassiveText {
+            render_helper
+        }
     }
 }
