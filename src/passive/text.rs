@@ -1,17 +1,9 @@
 use crate::helper::render::text::TextRenderHelper;
 
-use wasmuri_container::{
-    Component,
-    ContainerManager
-};
-use wasmuri_container::cursor::Cursor;
-use wasmuri_container::layer::{
-    ComponentAgent,
-    LayerAgent
-};
-use wasmuri_events::RenderEvent;
-
-use web_sys::WebGlRenderingContext;
+use wasmuri_container::Component;
+use wasmuri_container::Cursor;
+use wasmuri_container::layer::LayerAgent;
+use wasmuri_container::params::RenderParams;
 
 pub struct PassiveText {
 
@@ -24,8 +16,8 @@ impl Component for PassiveText {
         self.render_helper.attach(agent).expect("Space should be free");
     }
 
-    fn render(&mut self, _gl: &WebGlRenderingContext, _agent: &mut ComponentAgent, _event: &RenderEvent, _manager: &ContainerManager) -> Option<Cursor> {
-        self.render_helper.render();
+    fn render(&mut self, params: &mut RenderParams) -> Option<Cursor> {
+        self.render_helper.render(params);
         None
     }
 }
