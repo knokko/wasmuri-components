@@ -11,7 +11,7 @@ wasmuri-core = { path="../core" }
 wasmuri-container = { path="../container" }
 wasmuri-events = { path="../events" }
 wasmuri-text = { path="../text" }
-
+unicode-segmentation = "1.3.0"
 
 
 [dependencies.web-sys]
