@@ -36,4 +36,8 @@ impl PassiveText {
             render_helper
         }
     }
+
+    pub fn boxed(render_helper: Box<dyn TextRenderHelper>) -> Box<PassiveText> {
+        Box::new(Self::new(render_helper))
+    }
 }

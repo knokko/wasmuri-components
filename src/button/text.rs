@@ -19,6 +19,10 @@ impl TextButton {
             on_click
         }
     }
+
+    pub fn boxed(render_helper: Box<dyn TextRenderHelper>, on_click: Box<dyn FnMut(&mut dyn TextRenderHelper, &mut MouseClickParams)>) -> Box<TextButton> {
+        Box::new(TextButton::new(render_helper, on_click))
+    }
 }
 
 impl Component for TextButton {

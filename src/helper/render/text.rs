@@ -55,6 +55,10 @@ impl SimpleTextRenderHelper {
         }
     }
 
+    pub fn boxed(text: &str, font: &Rc<Font>, max_region: Region, colors: TextColors) -> Box<SimpleTextRenderHelper> {
+        Box::new(Self::new(text, font, max_region, colors))
+    }
+
     pub fn set_text(&mut self, new_text: &str, font: Rc<Font>, agent: &mut ComponentAgent){
         self.text_model = font.create_text_model(new_text);
         agent.request_render();
@@ -154,8 +158,16 @@ impl ButtonTextRenderHelper {
         }
     }
 
+    pub fn boxed(text: &str, font: &Rc<Font>, max_region: Region, base_colors: TextColors, hover_colors: TextColors) -> Box<ButtonTextRenderHelper> {
+        Box::new(ButtonTextRenderHelper::new(text, font, max_region, base_colors, hover_colors))
+    }
+
     pub fn simple(text: &str, font: &Rc<Font>, max_region: Region, colors: TextColors) -> ButtonTextRenderHelper {
         Self::new(text, font, max_region, colors, lighten_colors(colors))
+    }
+
+    pub fn simple_boxed(text: &str, font: &Rc<Font>, max_region: Region, colors: TextColors) -> Box<ButtonTextRenderHelper> {
+        Box::new(Self::simple(text, font, max_region, colors))
     }
 
     pub fn set_text(&mut self, new_text: &str, font: Rc<Font>, agent: &mut ComponentAgent){
