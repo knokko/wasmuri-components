@@ -33,7 +33,10 @@ impl Component for TextButton {
     }
 
     fn mouse_click(&mut self, params: &mut MouseClickParams){
-        self.on_click.as_mut()(self.render_helper.as_mut(), params);
+        self.render_helper.on_click(params);
+        if self.render_helper.get_current_region().is_inside(params.manager.get_mouse_position()) {
+            self.on_click.as_mut()(self.render_helper.as_mut(), params);
+        }
     }
 
     fn mouse_move(&mut self, params: &mut MouseMoveParams){

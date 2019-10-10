@@ -5,26 +5,22 @@ use wasmuri_container::layer::{
     ComponentAgent,
     LayerAgent,
     RenderPhase,
-    RenderTrigger,
-    Region
+    RenderTrigger
 };
 use wasmuri_container::params::*;
 
-use wasmuri_core::util::{
-    Color,
-    TextColors
-};
+use wasmuri_core::color::*;
 
 use wasmuri_text::{
     Font,
     TextModel
 };
 
-use super::TextRenderHelper;
+use super::*;
 
 pub struct SimpleTextRenderHelper {
 
-    max_region: Region,
+    region: TextRegionProps,
 
     text_model: TextModel,
 
@@ -33,17 +29,17 @@ pub struct SimpleTextRenderHelper {
 
 impl SimpleTextRenderHelper {
 
-    pub fn new(text: &str, font: &Rc<Font>, max_region: Region, colors: TextColors) -> SimpleTextRenderHelper {
+    pub fn new(text: &str, font: &Rc<Font>, region: TextRegionProps, colors: TextColors) -> SimpleTextRenderHelper {
         SimpleTextRenderHelper {
-            max_region,
+            region,
             text_model: Rc::clone(font).create_text_model(text),
 
             colors
         }
     }
 
-    pub fn boxed(text: &str, font: &Rc<Font>, max_region: Region, colors: TextColors) -> Box<SimpleTextRenderHelper> {
-        Box::new(Self::new(text, font, max_region, colors))
+    pub fn boxed(text: &str, font: &Rc<Font>, region: TextRegionProps, colors: TextColors) -> Box<SimpleTextRenderHelper> {
+        Box::new(Self::new(text, font, region, colors))
     }
 
     pub fn set_fill_color(&mut self, new_color: Color, agent: &mut ComponentAgent){
@@ -69,29 +65,16 @@ impl SimpleTextRenderHelper {
 
 impl TextRenderHelper for SimpleTextRenderHelper {
 
-    fn attach(&self, agent: &mut LayerAgent) -> Result<(),()> {
-        agent.claim_render_space(self.max_region, RenderTrigger::Request, RenderPhase::Text)
+    fn attach(&mut self, agent: &mut LayerAgent) -> Result<(),()> {
+        agent.claim_render_space(self.region.get_max_region(), RenderTrigger::Request, RenderPhase::Text)
     }
 
     fn get_max_region(&self) -> Region {
-        self.max_region
+        self.region.get_max_region()
     }
 
     fn get_current_region(&self) -> Region {
-        let preferred_scale_y = self.max_region.get_height();
-        let preferred_scale_x = self.text_model.get_render_width(preferred_scale_y);
-        let scale_x;
-        let scale_y;
-        if preferred_scale_x <= self.max_region.get_width() {
-            scale_x = preferred_scale_x;
-            scale_y = preferred_scale_y;
-        } else {
-            scale_x = self.max_region.get_width();
-            scale_y = preferred_scale_y * self.max_region.get_width() / preferred_scale_x;
-        }
-        let offset_x = self.max_region.get_min_x() + (self.max_region.get_width() - scale_x) / 2.0;
-        let offset_y = self.max_region.get_min_y() + (self.max_region.get_height() - scale_y) / 2.0;
-        return Region::new(offset_x, offset_y, offset_x + scale_x, offset_y + scale_y);
+        self.region.get_current_region(&self.text_model)
     }
 
     fn set_text(&mut self, new_text: &str, font: Rc<Font>, agent: &mut ComponentAgent){
@@ -99,10 +82,12 @@ impl TextRenderHelper for SimpleTextRenderHelper {
         agent.request_render();
     }
 
-    fn render(&self, _params: &mut RenderParams) -> Option<Cursor> {
+    fn render(&self, params: &mut RenderParams) -> Option<Cursor> {
         let region = self.get_current_region();
+        if self.region.should_clear_remaining(&self.text_model, params) {
+            self.text_model.get_font().fill_rect(self.get_max_region(), self.colors.background_color);
+        }
         self.text_model.render(region.get_min_x(), region.get_min_y(), region.get_height(), self.colors);
-        wasmuri_core::util::print(&format!("Current region is {:?}", region));
         None
     }
 
@@ -110,5 +95,7 @@ impl TextRenderHelper for SimpleTextRenderHelper {
         None
     }
 
-    fn on_mouse_move(&self, _params: &mut MouseMoveParams) {}
+    fn on_mouse_move(&mut self, _params: &mut MouseMoveParams) {}
+
+    fn on_click(&mut self, _params: &mut MouseClickParams) {}
 }

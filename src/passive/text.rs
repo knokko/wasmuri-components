@@ -3,10 +3,7 @@ use crate::helper::render::text::TextRenderHelper;
 use wasmuri_container::Component;
 use wasmuri_container::Cursor;
 use wasmuri_container::layer::LayerAgent;
-use wasmuri_container::params::{
-    CursorParams,
-    RenderParams
-};
+use wasmuri_container::params::*;
 
 pub struct PassiveText {
 
@@ -26,6 +23,10 @@ impl Component for PassiveText {
 
     fn get_cursor(&mut self, _params: &mut CursorParams) -> Option<Cursor> {
         None
+    }
+
+    fn mouse_click(&mut self, params: &mut MouseClickParams){
+        self.render_helper.on_click(params);
     }
 }
 
