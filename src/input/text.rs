@@ -30,6 +30,10 @@ impl TextEditField {
             current_text: start_text
         }
     }
+
+    pub fn get_current_text(&self) -> &str {
+        &self.current_text
+    }
 }
 
 impl Component for TextEditField {

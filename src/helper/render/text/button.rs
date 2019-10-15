@@ -1,3 +1,4 @@
+use std::cell::RefCell;
 use std::rc::Rc;
 
 use wasmuri_container::Cursor;
@@ -55,12 +56,20 @@ impl ButtonTextRenderHelper {
         Box::new(ButtonTextRenderHelper::new(text, font, region, base_colors, hover_colors))
     }
 
+    pub fn celled(text: &str, font: &Rc<Font>, region: TextRegionProps, base_colors: TextColors, hover_colors: TextColors) -> Rc<RefCell<ButtonTextRenderHelper>> {
+        Rc::new(RefCell::new(ButtonTextRenderHelper::new(text, font, region, base_colors, hover_colors)))
+    }
+
     pub fn simple(text: &str, font: &Rc<Font>, region: TextRegionProps, colors: TextColors) -> ButtonTextRenderHelper {
         Self::new(text, font, region, colors, lighten_colors(colors))
     }
 
     pub fn simple_boxed(text: &str, font: &Rc<Font>, region: TextRegionProps, colors: TextColors) -> Box<ButtonTextRenderHelper> {
         Box::new(Self::simple(text, font, region, colors))
+    }
+
+    pub fn simple_celled(text: &str, font: &Rc<Font>, region: TextRegionProps, colors: TextColors) -> Rc<RefCell<ButtonTextRenderHelper>> {
+        Rc::new(RefCell::new(Self::simple(text, font, region, colors)))
     }
 
     pub fn set_base_fill_color(&mut self, new_color: Color, agent: &mut ComponentAgent){

@@ -1,3 +1,4 @@
+use std::cell::RefCell;
 use std::rc::Rc;
 
 use wasmuri_container::Cursor;
@@ -40,6 +41,10 @@ impl SimpleTextRenderHelper {
 
     pub fn boxed(text: &str, font: &Rc<Font>, region: TextRegionProps, colors: TextColors) -> Box<SimpleTextRenderHelper> {
         Box::new(Self::new(text, font, region, colors))
+    }
+
+    pub fn celled(text: &str, font: &Rc<Font>, region: TextRegionProps, colors: TextColors) -> Rc<RefCell<SimpleTextRenderHelper>> {
+        Rc::new(RefCell::new(Self::new(text, font, region, colors)))
     }
 
     pub fn set_fill_color(&mut self, new_color: Color, agent: &mut ComponentAgent){

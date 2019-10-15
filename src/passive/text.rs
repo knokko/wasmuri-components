@@ -1,5 +1,8 @@
 use crate::helper::render::text::TextRenderHelper;
 
+use std::cell::RefCell;
+use std::rc::Rc;
+
 use wasmuri_container::Component;
 use wasmuri_container::Cursor;
 use wasmuri_container::layer::LayerAgent;
@@ -40,5 +43,13 @@ impl PassiveText {
 
     pub fn boxed(render_helper: Box<dyn TextRenderHelper>) -> Box<PassiveText> {
         Box::new(Self::new(render_helper))
+    }
+
+    pub fn celled(render_helper: Box<dyn TextRenderHelper>) -> Rc<RefCell<PassiveText>> {
+        Rc::new(RefCell::new(Self::new(render_helper)))
+    }
+
+    pub fn set_text(&mut self, new_text: &str){
+        
     }
 }
