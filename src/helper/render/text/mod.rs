@@ -8,7 +8,8 @@ pub use button::*;
 pub use edit::*;
 pub use location::*;
 
-use std::rc::Rc;
+use std::cell::RefCell;
+use std::rc::*;
 
 use wasmuri_container::Cursor;
 use wasmuri_container::layer::{
@@ -17,17 +18,23 @@ use wasmuri_container::layer::{
 };
 use wasmuri_container::params::*;
 use wasmuri_core::util::Region;
-use wasmuri_text::Font;
+use wasmuri_text::TextModel;
 
 pub trait TextRenderHelper {
 
     fn attach(&mut self, agent: &mut LayerAgent) -> Result<(),()>;
 
+    fn set_agent(&mut self, agent: Weak<RefCell<ComponentAgent>>);
+
+    fn get_agent(&self) -> &Weak<RefCell<ComponentAgent>>;
+
+    fn set_text_model(&mut self, new_text: TextModel);
+
+    fn set_text(&mut self, new_text: &str);
+
     fn get_max_region(&self) -> Region;
 
     fn get_current_region(&self) -> Region;
-
-    fn set_text(&mut self, new_text: &str, font: Rc<Font>, agent: &mut ComponentAgent);
 
     fn render(&self, params: &mut RenderParams) -> Option<Cursor>;
 

@@ -1,32 +1,29 @@
 use crate::helper::render::text::*;
 
-use std::rc::Rc;
+use std::cell::RefCell;
+use std::rc::*;
 
 use unicode_segmentation::UnicodeSegmentation;
 
 use wasmuri_container::{
     Cursor,
     Component,
-    layer::LayerAgent,
+    layer::*,
     params::*
 };
 
-use wasmuri_text::Font;
-
 pub struct TextEditField {
 
-    render_helper: Box<EditTextRenderHelper>,
-    font: Rc<Font>,
+    render_helper: Rc<RefCell<EditTextRenderHelper>>,
 
     current_text: String
 }
 
 impl TextEditField {
 
-    pub fn new(start_text: String, font: &Rc<Font>, render_helper: Box<EditTextRenderHelper>) -> TextEditField {
+    pub fn new(start_text: String, render_helper: Rc<RefCell<EditTextRenderHelper>>) -> TextEditField {
         TextEditField {
             render_helper,
-            font: Rc::clone(font),
             current_text: start_text
         }
     }
@@ -39,29 +36,37 @@ impl TextEditField {
 impl Component for TextEditField {
 
     fn attach(&mut self, agent: &mut LayerAgent){
-        self.render_helper.attach(agent).expect("Should have space for the text render helper of this edit field");
+        self.render_helper.borrow_mut().attach(agent).expect("Should have space for the text render helper of this edit field");
         agent.make_key_down_listener(10);
         agent.make_mouse_click_listener();
     }
 
+    fn set_agent(&mut self, agent: Weak<RefCell<ComponentAgent>>){
+        self.render_helper.borrow_mut().set_agent(agent);
+    }
+
+    fn get_agent(&self) -> Weak<RefCell<ComponentAgent>> {
+        Weak::clone(self.render_helper.borrow().get_agent())
+    }
+
     fn render(&mut self, params: &mut RenderParams) -> Option<Cursor>{
-        self.render_helper.render(params)
+        self.render_helper.borrow().render(params)
     }
 
     fn get_cursor(&mut self, params: &mut CursorParams) -> Option<Cursor> {
-        self.render_helper.get_cursor(params)
+        self.render_helper.borrow().get_cursor(params)
     }
 
     fn mouse_move(&mut self, params: &mut MouseMoveParams) {
-        self.render_helper.on_mouse_move(params);
+        self.render_helper.borrow_mut().on_mouse_move(params);
     }
 
     fn mouse_click(&mut self, params: &mut MouseClickParams){
-        self.render_helper.on_click(params);
+        self.render_helper.borrow_mut().on_click(params);
     }
 
     fn key_down(&mut self, params: &mut KeyDownParams) -> bool {
-        if self.render_helper.is_active() {
+        if self.render_helper.borrow().is_active() {
             let key = params.event.key_event.key();
             let mut char_counter = 0;
             {
@@ -89,11 +94,11 @@ impl Component for TextEditField {
                     }
                     self.current_text = new_text;
                 } else if key == "Escape" || key == "Enter" {
-                    self.render_helper.set_active(false);
+                    self.render_helper.borrow_mut().set_active(false);
                 }
             }
 
-            self.render_helper.set_text(&self.current_text, Rc::clone(&self.font), params.agent);
+            self.render_helper.borrow_mut().set_text(&self.current_text);
             true
         } else {
             false

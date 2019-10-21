@@ -22,6 +22,7 @@ use super::*;
 pub struct SimpleTextRenderHelper {
 
     region: TextRegionProps,
+    agent: Option<Weak<RefCell<ComponentAgent>>>,
 
     text_model: TextModel,
 
@@ -33,6 +34,7 @@ impl SimpleTextRenderHelper {
     pub fn new(text: &str, font: &Rc<Font>, region: TextRegionProps, colors: TextColors) -> SimpleTextRenderHelper {
         SimpleTextRenderHelper {
             region,
+            agent: None,
             text_model: Rc::clone(font).create_text_model(text),
 
             colors
@@ -74,6 +76,14 @@ impl TextRenderHelper for SimpleTextRenderHelper {
         agent.claim_render_space(self.region.get_max_region(), RenderTrigger::Request, RenderPhase::Text)
     }
 
+    fn set_agent(&mut self, agent: Weak<RefCell<ComponentAgent>>){
+        self.agent = Some(agent);
+    }
+
+    fn get_agent(&self) -> &Weak<RefCell<ComponentAgent>> {
+        self.agent.as_ref().expect("Agent should have been set by now")
+    }
+
     fn get_max_region(&self) -> Region {
         self.region.get_max_region()
     }
@@ -82,9 +92,14 @@ impl TextRenderHelper for SimpleTextRenderHelper {
         self.region.get_current_region(&self.text_model)
     }
 
-    fn set_text(&mut self, new_text: &str, font: Rc<Font>, agent: &mut ComponentAgent){
-        self.text_model = font.create_text_model(new_text);
-        agent.request_render();
+    fn set_text(&mut self, new_text: &str){
+        self.text_model = Rc::clone(self.text_model.get_font()).create_text_model(new_text);
+        self.agent.as_ref().expect("Agent should have been set by now").upgrade().expect("Component agent should not have been dropped").borrow_mut().request_render();
+    }
+
+    fn set_text_model(&mut self, new_text: TextModel){
+        self.text_model = new_text;
+        self.agent.as_ref().expect("Agent should have been set by now").upgrade().expect("Component agent should not have been dropped").borrow_mut().request_render();
     }
 
     fn render(&self, params: &mut RenderParams) -> Option<Cursor> {
