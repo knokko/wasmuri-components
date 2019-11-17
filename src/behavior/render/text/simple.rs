@@ -41,12 +41,13 @@ impl SimpleTextRenderController {
         }
     }
 
-    pub fn boxed(text: &str, font: &Rc<Font>, region: TextRegionProps, colors: TextColors) -> Box<SimpleTextRenderController> {
-        Box::new(Self::new(text, font, region, colors))
-    }
-
     pub fn celled(text: &str, font: &Rc<Font>, region: TextRegionProps, colors: TextColors) -> Rc<RefCell<SimpleTextRenderController>> {
         Rc::new(RefCell::new(Self::new(text, font, region, colors)))
+    }
+
+    pub fn tuple(text: &str, font: &Rc<Font>, region: TextRegionProps, colors: TextColors) -> (Rc<RefCell<dyn ComponentBehavior>>, Rc<RefCell<dyn TextRenderController>>) {
+        let instance = Rc::new(RefCell::new(Self::new(text, font, region, colors)));
+        (Rc::clone(&instance) as Rc<RefCell<dyn ComponentBehavior>>, instance)
     }
 
     pub fn set_fill_color(&mut self, new_color: Color, agent: &mut ComponentAgent){

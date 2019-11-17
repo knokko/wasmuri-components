@@ -54,24 +54,26 @@ impl ButtonTextRenderController {
         }
     }
 
-    pub fn boxed(text: &str, font: &Rc<Font>, region: TextRegionProps, base_colors: TextColors, hover_colors: TextColors) -> Box<ButtonTextRenderController> {
-        Box::new(ButtonTextRenderController::new(text, font, region, base_colors, hover_colors))
+    pub fn simple(text: &str, font: &Rc<Font>, region: TextRegionProps, colors: TextColors) -> ButtonTextRenderController {
+        Self::new(text, font, region, colors, lighten_colors(colors))
     }
 
     pub fn celled(text: &str, font: &Rc<Font>, region: TextRegionProps, base_colors: TextColors, hover_colors: TextColors) -> Rc<RefCell<ButtonTextRenderController>> {
         Rc::new(RefCell::new(ButtonTextRenderController::new(text, font, region, base_colors, hover_colors)))
     }
 
-    pub fn simple(text: &str, font: &Rc<Font>, region: TextRegionProps, colors: TextColors) -> ButtonTextRenderController {
-        Self::new(text, font, region, colors, lighten_colors(colors))
-    }
-
-    pub fn simple_boxed(text: &str, font: &Rc<Font>, region: TextRegionProps, colors: TextColors) -> Box<ButtonTextRenderController> {
-        Box::new(Self::simple(text, font, region, colors))
-    }
-
     pub fn simple_celled(text: &str, font: &Rc<Font>, region: TextRegionProps, colors: TextColors) -> Rc<RefCell<ButtonTextRenderController>> {
         Rc::new(RefCell::new(Self::simple(text, font, region, colors)))
+    }
+
+    pub fn tuple(text: &str, font: &Rc<Font>, region: TextRegionProps, base_colors: TextColors, hover_colors: TextColors) -> (Rc<RefCell<dyn ComponentBehavior>>, Rc<RefCell<dyn TextRenderController>>) {
+        let instance = Rc::new(RefCell::new(Self::new(text, font, region, base_colors, hover_colors)));
+        (Rc::clone(&instance) as Rc<RefCell<dyn ComponentBehavior>>, instance)
+    }
+
+    pub fn simple_tuple(text: &str, font: &Rc<Font>, region: TextRegionProps, colors: TextColors) -> (Rc<RefCell<dyn ComponentBehavior>>, Rc<RefCell<dyn TextRenderController>>) {
+        let instance = Rc::new(RefCell::new(Self::simple(text, font, region, colors)));
+        (Rc::clone(&instance) as Rc<RefCell<dyn ComponentBehavior>>, instance)
     }
 
     pub fn set_base_fill_color(&mut self, new_color: Color){

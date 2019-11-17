@@ -26,14 +26,9 @@ impl TextButton {
         }
     }
 
-    pub fn boxed(render_behavior: Rc<RefCell<dyn ComponentBehavior>>, render_controller: Rc<RefCell<dyn TextRenderController>>,
-    on_click: Box<dyn FnMut(&mut ComponentAgent, &mut dyn TextRenderController, &mut MouseClickParams)>) -> Box<TextButton> {
-        Box::new(TextButton::new(render_behavior, render_controller, on_click))
-    }
-
-    pub fn celled(render_behavior: Rc<RefCell<dyn ComponentBehavior>>, render_controller: Rc<RefCell<dyn TextRenderController>>,
+    pub fn celled(render_helper: (Rc<RefCell<dyn ComponentBehavior>>, Rc<RefCell<dyn TextRenderController>>),
     on_click: Box<dyn FnMut(&mut ComponentAgent, &mut dyn TextRenderController, &mut MouseClickParams)>) -> Rc<RefCell<TextButton>> {
-        Rc::new(RefCell::new(TextButton::new(render_behavior, render_controller, on_click)))
+        Rc::new(RefCell::new(TextButton::new(render_helper.0, render_helper.1, on_click)))
     }
 
     pub fn get_controller(&self) -> Rc<RefCell<dyn TextRenderController>> {

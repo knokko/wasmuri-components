@@ -13,11 +13,15 @@ pub struct TextEditField {
 
 impl TextEditField {
 
-    pub fn new(render_behavior: Rc<RefCell<dyn ComponentBehavior>>, render_controller: Rc<RefCell<EditTextRenderController>>) -> TextEditField {
+    pub fn new(render_helper: (Rc<RefCell<dyn ComponentBehavior>>, Rc<RefCell<EditTextRenderController>>)) -> TextEditField {
         TextEditField {
-            render_behavior,
-            render_controller
+            render_behavior: render_helper.0,
+            render_controller: render_helper.1
         }
+    }
+
+    pub fn celled(render_helper: (Rc<RefCell<dyn ComponentBehavior>>, Rc<RefCell<EditTextRenderController>>)) -> Rc<RefCell<TextEditField>> {
+        Rc::new(RefCell::new(Self::new(render_helper)))
     }
 
     pub fn get_current_text(&self) -> String {

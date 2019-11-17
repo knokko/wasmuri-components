@@ -76,10 +76,6 @@ impl EditTextRenderController {
         }
     }
 
-    pub fn boxed(text: &str, font: &Rc<Font>, region: TextRegionProps, base_colors: TextColors, hover_colors: TextColors, active_colors: TextColors) -> Box<EditTextRenderController> {
-        Box::new(EditTextRenderController::new(text, font, region, base_colors, hover_colors, active_colors))
-    }
-
     pub fn celled(text: &str, font: &Rc<Font>, region: TextRegionProps, base_colors: TextColors, hover_colors: TextColors, active_colors: TextColors) -> Rc<RefCell<EditTextRenderController>> {
         Rc::new(RefCell::new(EditTextRenderController::new(text, font, region, base_colors, hover_colors, active_colors)))
     }
@@ -88,12 +84,18 @@ impl EditTextRenderController {
         Self::new(text, font, region, colors, darken_colors(colors), lighten_colors(colors))
     }
 
-    pub fn simple_boxed(text: &str, font: &Rc<Font>, region: TextRegionProps, colors: TextColors) -> Box<EditTextRenderController> {
-        Box::new(Self::simple(text, font, region, colors))
-    }
-
     pub fn simple_celled(text: &str, font: &Rc<Font>, region: TextRegionProps, colors: TextColors) -> Rc<RefCell<EditTextRenderController>> {
         Rc::new(RefCell::new(Self::simple(text, font, region, colors)))
+    }
+
+    pub fn tuple(text: &str, font: &Rc<Font>, region: TextRegionProps, base_colors: TextColors, hover_colors: TextColors, active_colors: TextColors) -> (Rc<RefCell<dyn ComponentBehavior>>, Rc<RefCell<EditTextRenderController>>) {
+        let instance = Rc::new(RefCell::new(Self::new(text, font, region, base_colors, hover_colors, active_colors)));
+        (Rc::clone(&instance) as Rc<RefCell<dyn ComponentBehavior>>, instance)
+    }
+
+    pub fn simple_tuple(text: &str, font: &Rc<Font>, region: TextRegionProps, colors: TextColors) -> (Rc<RefCell<dyn ComponentBehavior>>, Rc<RefCell<EditTextRenderController>>) {
+        let instance = Rc::new(RefCell::new(Self::simple(text, font, region, colors)));
+        (Rc::clone(&instance) as Rc<RefCell<dyn ComponentBehavior>>, instance)
     }
 
     pub fn set_base_fill_color(&mut self, new_color: Color){
@@ -243,7 +245,15 @@ impl ComponentBehavior for EditTextRenderController {
             self.text_model.get_font().fill_rect(self.region.get_max_region(), colors.background_color);
         }
 
-        self.text_model.render(region.get_min_x(), region.get_min_y(), region.get_height(), colors);
+        let render_width = self.text_model.get_render_width(region.get_height());
+        let render_height;
+        if render_width <= region.get_width() {
+            render_height = region.get_height();
+        } else {
+            render_height = region.get_height() * region.get_width() / render_width;
+        }
+
+        self.text_model.render(region.get_min_x(), region.get_min_y(), render_height, colors);
         result
     }
 

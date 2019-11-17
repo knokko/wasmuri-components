@@ -27,12 +27,8 @@ impl PassiveText {
         }
     }
 
-    pub fn boxed(render_behavior: Rc<RefCell<dyn ComponentBehavior>>, render_controller: Rc<RefCell<dyn TextRenderController>>) -> Box<PassiveText> {
-        Box::new(Self::new(render_behavior, render_controller))
-    }
-
-    pub fn celled(render_behavior: Rc<RefCell<dyn ComponentBehavior>>, render_controller: Rc<RefCell<dyn TextRenderController>>) -> Rc<RefCell<PassiveText>> {
-        Rc::new(RefCell::new(Self::new(render_behavior, render_controller)))
+    pub fn celled(render_helper: (Rc<RefCell<dyn ComponentBehavior>>, Rc<RefCell<dyn TextRenderController>>)) -> Rc<RefCell<PassiveText>> {
+        Rc::new(RefCell::new(Self::new(render_helper.0, render_helper.1)))
     }
 
     pub fn get_controller(&self) -> Rc<RefCell<dyn TextRenderController>> {
