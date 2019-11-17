@@ -70,10 +70,10 @@ impl SimpleTextRenderHelper {
     }
 }
 
-impl TextRenderHelper for SimpleTextRenderHelper {
+impl ComponentBehavior for SimpleTextRenderHelper {
 
-    fn attach(&mut self, agent: &mut LayerAgent) -> Result<(),()> {
-        agent.claim_render_space(self.region.get_max_region(), RenderTrigger::Request, RenderPhase::Text)
+    fn attach(&mut self, agent: &mut LayerAgent){
+        agent.claim_render_space(self.region.get_max_region(), RenderTrigger::Request, RenderPhase::Text).expect("Should have render space for SimpleTextRenderHelper");
     }
 
     fn set_agent(&mut self, agent: Weak<RefCell<ComponentAgent>>){
@@ -83,6 +83,22 @@ impl TextRenderHelper for SimpleTextRenderHelper {
     fn get_agent(&self) -> &Weak<RefCell<ComponentAgent>> {
         self.agent.as_ref().expect("Agent should have been set by now")
     }
+
+    fn render(&mut self, params: &mut RenderParams) -> Option<Cursor> {
+        let region = self.get_current_region();
+        if self.region.should_clear_remaining(&self.text_model, params) {
+            self.text_model.get_font().fill_rect(self.get_max_region(), self.colors.background_color);
+        }
+        self.text_model.render(region.get_min_x(), region.get_min_y(), region.get_height(), self.colors);
+        None
+    }
+
+    fn get_cursor(&mut self, _params: &mut CursorParams) -> Option<Cursor> {
+        None
+    }
+}
+
+impl TextRenderController for SimpleTextRenderHelper {
 
     fn get_max_region(&self) -> Region {
         self.region.get_max_region()
@@ -101,21 +117,4 @@ impl TextRenderHelper for SimpleTextRenderHelper {
         self.text_model = new_text;
         self.agent.as_ref().expect("Agent should have been set by now").upgrade().expect("Component agent should not have been dropped").borrow_mut().request_render();
     }
-
-    fn render(&self, params: &mut RenderParams) -> Option<Cursor> {
-        let region = self.get_current_region();
-        if self.region.should_clear_remaining(&self.text_model, params) {
-            self.text_model.get_font().fill_rect(self.get_max_region(), self.colors.background_color);
-        }
-        self.text_model.render(region.get_min_x(), region.get_min_y(), region.get_height(), self.colors);
-        None
-    }
-
-    fn get_cursor(&self, _params: &mut CursorParams) -> Option<Cursor> {
-        None
-    }
-
-    fn on_mouse_move(&mut self, _params: &mut MouseMoveParams) {}
-
-    fn on_click(&mut self, _params: &mut MouseClickParams) {}
 }

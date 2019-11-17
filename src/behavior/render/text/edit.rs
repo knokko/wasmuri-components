@@ -1,6 +1,8 @@
 use std::cell::RefCell;
 use std::rc::Rc;
 
+use unicode_segmentation::UnicodeSegmentation;
+
 use wasmuri_container::Cursor;
 use wasmuri_container::layer::{
     ComponentAgent,
@@ -19,7 +21,7 @@ use wasmuri_text::{
 
 use super::*;
 
-pub struct EditTextRenderHelper {
+pub struct EditTextRenderController {
 
     region: TextRegionProps,
     agent: Option<Weak<RefCell<ComponentAgent>>>,
@@ -29,7 +31,8 @@ pub struct EditTextRenderHelper {
     hover_colors: TextColors,
     active_colors: TextColors,
 
-    active: bool
+    active: bool,
+    current_text: String
 }
 
 fn lighten_component(component: u8) -> u8 {
@@ -56,10 +59,10 @@ fn darken_colors(colors: TextColors) -> TextColors {
     TextColors::new(colors.fill_color, colors.stroke_color, darken_color(colors.background_color))
 }
 
-impl EditTextRenderHelper {
+impl EditTextRenderController {
 
-    pub fn new(text: &str, font: &Rc<Font>, region: TextRegionProps, base_colors: TextColors, hover_colors: TextColors, active_colors: TextColors) -> EditTextRenderHelper {
-        EditTextRenderHelper {
+    pub fn new(text: &str, font: &Rc<Font>, region: TextRegionProps, base_colors: TextColors, hover_colors: TextColors, active_colors: TextColors) -> EditTextRenderController {
+        EditTextRenderController {
             region,
             agent: None,
             text_model: Rc::clone(font).create_text_model(text),
@@ -68,27 +71,28 @@ impl EditTextRenderHelper {
             hover_colors,
             active_colors,
 
-            active: false
+            active: false,
+            current_text: text.to_string()
         }
     }
 
-    pub fn boxed(text: &str, font: &Rc<Font>, region: TextRegionProps, base_colors: TextColors, hover_colors: TextColors, active_colors: TextColors) -> Box<EditTextRenderHelper> {
-        Box::new(EditTextRenderHelper::new(text, font, region, base_colors, hover_colors, active_colors))
+    pub fn boxed(text: &str, font: &Rc<Font>, region: TextRegionProps, base_colors: TextColors, hover_colors: TextColors, active_colors: TextColors) -> Box<EditTextRenderController> {
+        Box::new(EditTextRenderController::new(text, font, region, base_colors, hover_colors, active_colors))
     }
 
-    pub fn celled(text: &str, font: &Rc<Font>, region: TextRegionProps, base_colors: TextColors, hover_colors: TextColors, active_colors: TextColors) -> Rc<RefCell<EditTextRenderHelper>> {
-        Rc::new(RefCell::new(EditTextRenderHelper::new(text, font, region, base_colors, hover_colors, active_colors)))
+    pub fn celled(text: &str, font: &Rc<Font>, region: TextRegionProps, base_colors: TextColors, hover_colors: TextColors, active_colors: TextColors) -> Rc<RefCell<EditTextRenderController>> {
+        Rc::new(RefCell::new(EditTextRenderController::new(text, font, region, base_colors, hover_colors, active_colors)))
     }
 
-    pub fn simple(text: &str, font: &Rc<Font>, region: TextRegionProps, colors: TextColors) -> EditTextRenderHelper {
+    pub fn simple(text: &str, font: &Rc<Font>, region: TextRegionProps, colors: TextColors) -> EditTextRenderController {
         Self::new(text, font, region, colors, darken_colors(colors), lighten_colors(colors))
     }
 
-    pub fn simple_boxed(text: &str, font: &Rc<Font>, region: TextRegionProps, colors: TextColors) -> Box<EditTextRenderHelper> {
+    pub fn simple_boxed(text: &str, font: &Rc<Font>, region: TextRegionProps, colors: TextColors) -> Box<EditTextRenderController> {
         Box::new(Self::simple(text, font, region, colors))
     }
 
-    pub fn simple_celled(text: &str, font: &Rc<Font>, region: TextRegionProps, colors: TextColors) -> Rc<RefCell<EditTextRenderHelper>> {
+    pub fn simple_celled(text: &str, font: &Rc<Font>, region: TextRegionProps, colors: TextColors) -> Rc<RefCell<EditTextRenderController>> {
         Rc::new(RefCell::new(Self::simple(text, font, region, colors)))
     }
 
@@ -188,16 +192,27 @@ impl EditTextRenderHelper {
         self.active = new_active;
     }
 
+    pub fn get_current_text(&self) -> &str {
+        &self.current_text
+    }
+
     fn agent(&self) -> Rc<RefCell<ComponentAgent>> {
         self.agent.as_ref().expect("Component agent should have been set by now").upgrade().expect("Component agent should not have been dropped")
     }
+
+    fn update_text(&mut self){
+        self.text_model = Rc::clone(self.text_model.get_font()).create_text_model(&self.current_text);
+        self.agent().borrow_mut().request_render();
+    }
 }
 
-impl TextRenderHelper for EditTextRenderHelper {
+impl ComponentBehavior for EditTextRenderController {
 
-    fn attach(&mut self, agent: &mut LayerAgent) -> Result<(),()> {
+    fn attach(&mut self, agent: &mut LayerAgent){
         agent.claim_mouse_in_out_space(self.region.get_max_region());
-        agent.claim_render_space(self.region.get_max_region(), RenderTrigger::Request, RenderPhase::Text)
+        agent.claim_render_space(self.region.get_max_region(), RenderTrigger::Request, RenderPhase::Text).expect("Should have render space for EditTextRenderController");
+        agent.make_key_down_listener(10);
+        agent.make_mouse_click_listener();
     }
 
     fn set_agent(&mut self, agent: Weak<RefCell<ComponentAgent>>){
@@ -208,25 +223,7 @@ impl TextRenderHelper for EditTextRenderHelper {
         self.agent.as_ref().expect("Agent should have been set by now")
     }
 
-    fn get_max_region(&self) -> Region {
-        self.region.get_max_region()
-    }
-
-    fn get_current_region(&self) -> Region {
-        self.region.get_current_region(&self.text_model)
-    }
-
-    fn set_text(&mut self, new_text: &str){
-        self.text_model = Rc::clone(self.text_model.get_font()).create_text_model(new_text);
-        self.agent().borrow_mut().request_render();
-    }
-
-    fn set_text_model(&mut self, new_text: TextModel){
-        self.text_model = new_text;
-        self.agent().borrow_mut().request_render();
-    }
-
-    fn render(&self, params: &mut RenderParams) -> Option<Cursor> {
+    fn render(&mut self, params: &mut RenderParams) -> Option<Cursor> {
         let region = self.get_max_region();
         let colors;
         let result = match region.is_inside(params.manager.get_mouse_position()) {
@@ -250,7 +247,7 @@ impl TextRenderHelper for EditTextRenderHelper {
         result
     }
 
-    fn get_cursor(&self, params: &mut CursorParams) -> Option<Cursor> {
+    fn get_cursor(&mut self, params: &mut CursorParams) -> Option<Cursor> {
         let region = self.get_max_region();
         if region.is_inside(params.manager.get_mouse_position()) {
             Some(Cursor::TEXT)
@@ -259,7 +256,7 @@ impl TextRenderHelper for EditTextRenderHelper {
         }
     }
 
-    fn on_mouse_move(&mut self, params: &mut MouseMoveParams) {
+    fn mouse_move(&mut self, params: &mut MouseMoveParams) {
         if !self.active {
             let region = self.get_max_region();
             let prev_mouse = params.manager.get_mouse_position();
@@ -270,8 +267,69 @@ impl TextRenderHelper for EditTextRenderHelper {
         }
     }
 
-    fn on_click(&mut self, params: &mut MouseClickParams) {
+    fn mouse_click(&mut self, params: &mut MouseClickParams) {
         self.active = self.region.get_max_region().is_inside(params.manager.get_mouse_position()) && !self.active;
+        self.agent().borrow_mut().request_render();
+    }
+
+    fn key_down(&mut self, params: &mut KeyDownParams) -> bool {
+        if self.is_active() {
+            let key = params.event.key_event.key();
+            let mut char_counter = 0;
+            {
+                let mut chars = UnicodeSegmentation::graphemes(key.as_str(), true);
+                let mut next_char = chars.next();
+                while next_char.is_some() {
+                    char_counter += 1;
+                    next_char = chars.next();
+                }
+            }
+            if char_counter < 3 {
+                self.current_text += &key;
+            } else {
+                if key == "Backspace" {
+                    let mut chars = UnicodeSegmentation::graphemes(self.current_text.as_str(), true);
+                    let mut new_text = "".to_string();
+                    let mut maybe_current_char = chars.next();
+                    while maybe_current_char.is_some() {
+                        let next_char = chars.next();
+                        let current_char = maybe_current_char.unwrap();
+                        if next_char.is_some() {
+                            new_text += current_char;
+                        }
+                        maybe_current_char = next_char;
+                    }
+                    self.current_text = new_text;
+                } else if key == "Escape" || key == "Enter" {
+                    self.set_active(false);
+                }
+            }
+
+            self.update_text();
+            true
+        } else {
+            false
+        }
+    }
+}
+
+impl TextRenderController for EditTextRenderController {
+
+    fn get_max_region(&self) -> Region {
+        self.region.get_max_region()
+    }
+
+    fn get_current_region(&self) -> Region {
+        self.region.get_current_region(&self.text_model)
+    }
+
+    fn set_text(&mut self, new_text: &str){
+        self.current_text = new_text.to_string();
+        self.update_text();
+    }
+
+    fn set_text_model(&mut self, new_text: TextModel){
+        self.text_model = new_text;
         self.agent().borrow_mut().request_render();
     }
 }

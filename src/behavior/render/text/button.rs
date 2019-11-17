@@ -1,7 +1,7 @@
 use std::cell::RefCell;
 use std::rc::Rc;
 
-use wasmuri_container::Cursor;
+use wasmuri_container::*;
 use wasmuri_container::layer::{
     ComponentAgent,
     LayerAgent,
@@ -19,7 +19,7 @@ use wasmuri_text::{
 
 use super::*;
 
-pub struct ButtonTextRenderHelper {
+pub struct ButtonTextRenderController {
 
     region: TextRegionProps,
     agent: Option<Weak<RefCell<ComponentAgent>>>,
@@ -41,10 +41,10 @@ fn lighten_colors(colors: TextColors) -> TextColors {
     TextColors::new(lighten_color(colors.fill_color), lighten_color(colors.stroke_color), lighten_color(colors.background_color))
 }
 
-impl ButtonTextRenderHelper {
+impl ButtonTextRenderController {
 
-    pub fn new(text: &str, font: &Rc<Font>, region: TextRegionProps, base_colors: TextColors, hover_colors: TextColors) -> ButtonTextRenderHelper {
-        ButtonTextRenderHelper {
+    pub fn new(text: &str, font: &Rc<Font>, region: TextRegionProps, base_colors: TextColors, hover_colors: TextColors) -> ButtonTextRenderController {
+        ButtonTextRenderController {
             region,
             agent: None,
             text_model: Rc::clone(font).create_text_model(text),
@@ -54,23 +54,23 @@ impl ButtonTextRenderHelper {
         }
     }
 
-    pub fn boxed(text: &str, font: &Rc<Font>, region: TextRegionProps, base_colors: TextColors, hover_colors: TextColors) -> Box<ButtonTextRenderHelper> {
-        Box::new(ButtonTextRenderHelper::new(text, font, region, base_colors, hover_colors))
+    pub fn boxed(text: &str, font: &Rc<Font>, region: TextRegionProps, base_colors: TextColors, hover_colors: TextColors) -> Box<ButtonTextRenderController> {
+        Box::new(ButtonTextRenderController::new(text, font, region, base_colors, hover_colors))
     }
 
-    pub fn celled(text: &str, font: &Rc<Font>, region: TextRegionProps, base_colors: TextColors, hover_colors: TextColors) -> Rc<RefCell<ButtonTextRenderHelper>> {
-        Rc::new(RefCell::new(ButtonTextRenderHelper::new(text, font, region, base_colors, hover_colors)))
+    pub fn celled(text: &str, font: &Rc<Font>, region: TextRegionProps, base_colors: TextColors, hover_colors: TextColors) -> Rc<RefCell<ButtonTextRenderController>> {
+        Rc::new(RefCell::new(ButtonTextRenderController::new(text, font, region, base_colors, hover_colors)))
     }
 
-    pub fn simple(text: &str, font: &Rc<Font>, region: TextRegionProps, colors: TextColors) -> ButtonTextRenderHelper {
+    pub fn simple(text: &str, font: &Rc<Font>, region: TextRegionProps, colors: TextColors) -> ButtonTextRenderController {
         Self::new(text, font, region, colors, lighten_colors(colors))
     }
 
-    pub fn simple_boxed(text: &str, font: &Rc<Font>, region: TextRegionProps, colors: TextColors) -> Box<ButtonTextRenderHelper> {
+    pub fn simple_boxed(text: &str, font: &Rc<Font>, region: TextRegionProps, colors: TextColors) -> Box<ButtonTextRenderController> {
         Box::new(Self::simple(text, font, region, colors))
     }
 
-    pub fn simple_celled(text: &str, font: &Rc<Font>, region: TextRegionProps, colors: TextColors) -> Rc<RefCell<ButtonTextRenderHelper>> {
+    pub fn simple_celled(text: &str, font: &Rc<Font>, region: TextRegionProps, colors: TextColors) -> Rc<RefCell<ButtonTextRenderController>> {
         Rc::new(RefCell::new(Self::simple(text, font, region, colors)))
     }
 
@@ -143,40 +143,22 @@ impl ButtonTextRenderHelper {
     }
 }
 
-impl TextRenderHelper for ButtonTextRenderHelper {
+impl ComponentBehavior for ButtonTextRenderController {
 
-    fn attach(&mut self, agent: &mut LayerAgent) -> Result<(),()> {
+    fn attach(&mut self, agent: &mut LayerAgent){
         agent.claim_mouse_move_space(self.region.get_max_region());
-        agent.claim_render_space(self.region.get_max_region(), RenderTrigger::Request, RenderPhase::Text)
-    }
-
-    fn set_agent(&mut self, agent: Weak<RefCell<ComponentAgent>>){
-        self.agent = Some(agent);
+        agent.claim_render_space(self.region.get_max_region(), RenderTrigger::Request, RenderPhase::Text).expect("Should have render space for ButtonTextRenderController");
     }
 
     fn get_agent(&self) -> &Weak<RefCell<ComponentAgent>> {
         self.agent.as_ref().expect("Agent should have been set by now")
     }
 
-    fn get_max_region(&self) -> Region {
-        self.region.get_max_region()
+    fn set_agent(&mut self, agent: Weak<RefCell<ComponentAgent>>){
+        self.agent = Some(agent);
     }
 
-    fn get_current_region(&self) -> Region {
-        self.region.get_current_region(&self.text_model)
-    }
-
-    fn set_text(&mut self, new_text: &str){
-        self.text_model = Rc::clone(self.text_model.get_font()).create_text_model(new_text);
-        self.request_render();
-    }
-
-    fn set_text_model(&mut self, new_text: TextModel){
-        self.text_model = new_text;
-        self.request_render();
-    }
-
-    fn render(&self, params: &mut RenderParams) -> Option<Cursor> {
+    fn render(&mut self, params: &mut RenderParams) -> Option<Cursor> {
         let region = self.get_current_region();
         let colors;
         let result;
@@ -197,7 +179,7 @@ impl TextRenderHelper for ButtonTextRenderHelper {
         result
     }
 
-    fn get_cursor(&self, params: &mut CursorParams) -> Option<Cursor> {
+    fn get_cursor(&mut self, params: &mut CursorParams) -> Option<Cursor> {
         let region = self.get_current_region();
         if region.is_inside(params.manager.get_mouse_position()) {
             Some(Cursor::POINTER)
@@ -206,7 +188,7 @@ impl TextRenderHelper for ButtonTextRenderHelper {
         }
     }
 
-    fn on_mouse_move(&mut self, params: &mut MouseMoveParams) {
+    fn mouse_move(&mut self, params: &mut MouseMoveParams) {
         let region = self.get_current_region();
         let prev_mouse = params.manager.get_mouse_position();
         let next_mouse = params.manager.to_gl_coords(params.event.get_new_position());
@@ -214,6 +196,25 @@ impl TextRenderHelper for ButtonTextRenderHelper {
             self.request_render();
         }
     }
+}
 
-    fn on_click(&mut self, _params: &mut MouseClickParams) {}
+impl TextRenderController for ButtonTextRenderController {
+
+    fn get_max_region(&self) -> Region {
+        self.region.get_max_region()
+    }
+
+    fn get_current_region(&self) -> Region {
+        self.region.get_current_region(&self.text_model)
+    }
+
+    fn set_text(&mut self, new_text: &str){
+        self.text_model = Rc::clone(self.text_model.get_font()).create_text_model(new_text);
+        self.request_render();
+    }
+
+    fn set_text_model(&mut self, new_text: TextModel){
+        self.text_model = new_text;
+        self.request_render();
+    }
 }
