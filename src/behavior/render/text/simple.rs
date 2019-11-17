@@ -19,7 +19,7 @@ use wasmuri_text::{
 
 use super::*;
 
-pub struct SimpleTextRenderHelper {
+pub struct SimpleTextRenderController {
 
     region: TextRegionProps,
     agent: Option<Weak<RefCell<ComponentAgent>>>,
@@ -29,10 +29,10 @@ pub struct SimpleTextRenderHelper {
     colors: TextColors
 }
 
-impl SimpleTextRenderHelper {
+impl SimpleTextRenderController {
 
-    pub fn new(text: &str, font: &Rc<Font>, region: TextRegionProps, colors: TextColors) -> SimpleTextRenderHelper {
-        SimpleTextRenderHelper {
+    pub fn new(text: &str, font: &Rc<Font>, region: TextRegionProps, colors: TextColors) -> SimpleTextRenderController {
+        SimpleTextRenderController {
             region,
             agent: None,
             text_model: Rc::clone(font).create_text_model(text),
@@ -41,11 +41,11 @@ impl SimpleTextRenderHelper {
         }
     }
 
-    pub fn boxed(text: &str, font: &Rc<Font>, region: TextRegionProps, colors: TextColors) -> Box<SimpleTextRenderHelper> {
+    pub fn boxed(text: &str, font: &Rc<Font>, region: TextRegionProps, colors: TextColors) -> Box<SimpleTextRenderController> {
         Box::new(Self::new(text, font, region, colors))
     }
 
-    pub fn celled(text: &str, font: &Rc<Font>, region: TextRegionProps, colors: TextColors) -> Rc<RefCell<SimpleTextRenderHelper>> {
+    pub fn celled(text: &str, font: &Rc<Font>, region: TextRegionProps, colors: TextColors) -> Rc<RefCell<SimpleTextRenderController>> {
         Rc::new(RefCell::new(Self::new(text, font, region, colors)))
     }
 
@@ -70,7 +70,7 @@ impl SimpleTextRenderHelper {
     }
 }
 
-impl ComponentBehavior for SimpleTextRenderHelper {
+impl ComponentBehavior for SimpleTextRenderController {
 
     fn attach(&mut self, agent: &mut LayerAgent){
         agent.claim_render_space(self.region.get_max_region(), RenderTrigger::Request, RenderPhase::Text).expect("Should have render space for SimpleTextRenderHelper");
@@ -98,7 +98,7 @@ impl ComponentBehavior for SimpleTextRenderHelper {
     }
 }
 
-impl TextRenderController for SimpleTextRenderHelper {
+impl TextRenderController for SimpleTextRenderController {
 
     fn get_max_region(&self) -> Region {
         self.region.get_max_region()
