@@ -2,12 +2,7 @@ use std::cell::RefCell;
 use std::rc::Rc;
 
 use wasmuri_container::Cursor;
-use wasmuri_container::layer::{
-    ComponentAgent,
-    LayerAgent,
-    RenderPhase,
-    RenderTrigger
-};
+use wasmuri_container::layer::*;
 use wasmuri_container::params::*;
 
 use wasmuri_core::color::*;
@@ -50,6 +45,8 @@ impl SimpleTextRenderController {
         (Rc::clone(&instance) as Rc<RefCell<dyn ComponentBehavior>>, instance)
     }
 
+    // TODO Update render opacity if necessary!
+
     pub fn set_fill_color(&mut self, new_color: Color, agent: &mut ComponentAgent){
         self.colors.fill_color = new_color;
         agent.request_render();
@@ -74,7 +71,8 @@ impl SimpleTextRenderController {
 impl ComponentBehavior for SimpleTextRenderController {
 
     fn attach(&mut self, agent: &mut LayerAgent){
-        agent.claim_render_space(self.region.get_max_region(), RenderTrigger::Request, RenderPhase::Text).expect("Should have render space for SimpleTextRenderHelper");
+        agent.claim_render_space(self.region.get_max_region(), RenderTrigger::Request, determine_render_opacity(vec![self.colors]), 
+                RenderPhase::Text).expect("Should have render space for SimpleTextRenderHelper");
     }
 
     fn set_agent(&mut self, agent: Weak<RefCell<ComponentAgent>>){
@@ -85,13 +83,13 @@ impl ComponentBehavior for SimpleTextRenderController {
         self.agent.as_ref().expect("Agent should have been set by now")
     }
 
-    fn render(&mut self, params: &mut RenderParams) -> Option<Cursor> {
+    fn render(&mut self, params: &mut RenderParams) -> BehaviorRenderResult {
         let region = self.get_current_region();
         if self.region.should_clear_remaining(&self.text_model, params) {
             self.text_model.get_font().fill_rect(self.get_max_region(), self.colors.background_color);
         }
-        self.text_model.render(region.get_min_x(), region.get_min_y(), region.get_height(), self.colors);
-        None
+        self.text_model.render(region.get_float_min_x(), region.get_float_min_y(), region.get_float_height(), self.colors);
+        BehaviorRenderResult::without_cursor()
     }
 
     fn get_cursor(&mut self, _params: &mut CursorParams) -> Option<Cursor> {

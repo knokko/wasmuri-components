@@ -11,7 +11,9 @@ pub use location::*;
 use std::rc::*;
 
 use wasmuri_container::*;
+use wasmuri_container::layer::RenderOpacity;
 use wasmuri_core::util::Region;
+use wasmuri_core::color::*;
 use wasmuri_text::TextModel;
 
 pub trait TextRenderController {
@@ -23,4 +25,33 @@ pub trait TextRenderController {
     fn get_max_region(&self) -> Region;
 
     fn get_current_region(&self) -> Region;
+}
+
+fn determine_render_opacity(colors: Vec<TextColors>) -> RenderOpacity {
+    
+    let mut all_solid = true;
+    for color in &colors {
+        if !color.is_fully_solid() {
+            all_solid = false;
+            break;
+        }
+    }
+
+    if all_solid {
+        return RenderOpacity::StaticSolidOrNothing;
+    }
+
+    let mut has_partial_transparancy = false;
+    for color in &colors {
+        if color.has_partial_transparency() {
+            has_partial_transparancy = true;
+            break;
+        }
+    }
+
+    if has_partial_transparancy {
+        RenderOpacity::Mixed
+    } else {
+        RenderOpacity::DynamicSolidOrNothing
+    }
 }

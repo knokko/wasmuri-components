@@ -4,12 +4,7 @@ use std::rc::Rc;
 use unicode_segmentation::UnicodeSegmentation;
 
 use wasmuri_container::Cursor;
-use wasmuri_container::layer::{
-    ComponentAgent,
-    LayerAgent,
-    RenderPhase,
-    RenderTrigger
-};
+use wasmuri_container::layer::*;
 use wasmuri_container::params::*;
 
 use wasmuri_core::color::*;
@@ -97,6 +92,8 @@ impl EditTextRenderController {
         let instance = Rc::new(RefCell::new(Self::simple(text, font, region, colors)));
         (Rc::clone(&instance) as Rc<RefCell<dyn ComponentBehavior>>, instance)
     }
+
+    // TODO Update render opacity if necessary!
 
     pub fn set_base_fill_color(&mut self, new_color: Color){
         self.base_colors.fill_color = new_color;
@@ -212,7 +209,9 @@ impl ComponentBehavior for EditTextRenderController {
 
     fn attach(&mut self, agent: &mut LayerAgent){
         agent.claim_mouse_in_out_space(self.region.get_max_region());
-        agent.claim_render_space(self.region.get_max_region(), RenderTrigger::Request, RenderPhase::Text).expect("Should have render space for EditTextRenderController");
+        agent.claim_render_space(self.region.get_max_region(), RenderTrigger::Request, 
+                determine_render_opacity(vec![self.base_colors, self.hover_colors, self.active_colors]), 
+                RenderPhase::Text).expect("Should have render space for EditTextRenderController");
         agent.make_key_down_listener(10);
         agent.make_mouse_click_listener();
     }
@@ -225,17 +224,17 @@ impl ComponentBehavior for EditTextRenderController {
         self.agent.as_ref().expect("Agent should have been set by now")
     }
 
-    fn render(&mut self, params: &mut RenderParams) -> Option<Cursor> {
+    fn render(&mut self, params: &mut RenderParams) -> BehaviorRenderResult {
         let region = self.get_max_region();
         let colors;
-        let result = match region.is_inside(params.manager.get_mouse_position()) {
-            true => Some(Cursor::TEXT),
-            false => None
+        let result = match region.is_float_inside(params.manager.get_mouse_position()) {
+            true => BehaviorRenderResult::with_cursor(Cursor::TEXT),
+            false => BehaviorRenderResult::without_cursor()
         };
         
         if self.active {
             colors = self.active_colors;
-        } else if result.is_some() {
+        } else if result.has_cursor() {
             colors = self.hover_colors;
         } else {
             colors = self.base_colors;
@@ -245,21 +244,21 @@ impl ComponentBehavior for EditTextRenderController {
             self.text_model.get_font().fill_rect(self.region.get_max_region(), colors.background_color);
         }
 
-        let render_width = self.text_model.get_render_width(region.get_height());
+        let render_width = self.text_model.get_render_width(region.get_float_height());
         let render_height;
-        if render_width <= region.get_width() {
-            render_height = region.get_height();
+        if render_width <= region.get_float_width() {
+            render_height = region.get_float_height();
         } else {
-            render_height = region.get_height() * region.get_width() / render_width;
+            render_height = region.get_float_height() * region.get_float_width() / render_width;
         }
 
-        self.text_model.render(region.get_min_x(), region.get_min_y(), render_height, colors);
+        self.text_model.render(region.get_float_min_x(), region.get_float_min_y(), render_height, colors);
         result
     }
 
     fn get_cursor(&mut self, params: &mut CursorParams) -> Option<Cursor> {
         let region = self.get_max_region();
-        if region.is_inside(params.manager.get_mouse_position()) {
+        if region.is_float_inside(params.manager.get_mouse_position()) {
             Some(Cursor::TEXT)
         } else {
             None
@@ -271,14 +270,14 @@ impl ComponentBehavior for EditTextRenderController {
             let region = self.get_max_region();
             let prev_mouse = params.manager.get_mouse_position();
             let next_mouse = params.manager.to_gl_coords(params.event.get_new_position());
-            if region.is_inside(prev_mouse) != region.is_inside(next_mouse) {
+            if region.is_float_inside(prev_mouse) != region.is_float_inside(next_mouse) {
                 self.agent().borrow_mut().request_render();
             }
         }
     }
 
     fn mouse_click(&mut self, params: &mut MouseClickParams) {
-        self.active = self.region.get_max_region().is_inside(params.manager.get_mouse_position()) && !self.active;
+        self.active = self.region.get_max_region().is_float_inside(params.manager.get_mouse_position()) && !self.active;
         self.agent().borrow_mut().request_render();
     }
 

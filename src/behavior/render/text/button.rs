@@ -2,12 +2,7 @@ use std::cell::RefCell;
 use std::rc::Rc;
 
 use wasmuri_container::*;
-use wasmuri_container::layer::{
-    ComponentAgent,
-    LayerAgent,
-    RenderPhase,
-    RenderTrigger
-};
+use wasmuri_container::layer::*;
 use wasmuri_container::params::*;
 
 use wasmuri_core::color::*;
@@ -70,6 +65,8 @@ impl ButtonTextRenderController {
         let instance = Rc::new(RefCell::new(Self::new(text, font, region, base_colors, hover_colors)));
         (Rc::clone(&instance) as Rc<RefCell<dyn ComponentBehavior>>, instance)
     }
+
+    // TODO Update render opacity if necessary!
 
     pub fn simple_tuple(text: &str, font: &Rc<Font>, region: TextRegionProps, colors: TextColors) -> (Rc<RefCell<dyn ComponentBehavior>>, Rc<RefCell<dyn TextRenderController>>) {
         let instance = Rc::new(RefCell::new(Self::simple(text, font, region, colors)));
@@ -149,7 +146,9 @@ impl ComponentBehavior for ButtonTextRenderController {
 
     fn attach(&mut self, agent: &mut LayerAgent){
         agent.claim_mouse_move_space(self.region.get_max_region());
-        agent.claim_render_space(self.region.get_max_region(), RenderTrigger::Request, RenderPhase::Text).expect("Should have render space for ButtonTextRenderController");
+        agent.claim_render_space(self.region.get_max_region(), RenderTrigger::Request, 
+                determine_render_opacity(vec![self.base_colors, self.hover_colors]), 
+                RenderPhase::Text).expect("Should have render space for ButtonTextRenderController");
     }
 
     fn get_agent(&self) -> &Weak<RefCell<ComponentAgent>> {
@@ -160,30 +159,30 @@ impl ComponentBehavior for ButtonTextRenderController {
         self.agent = Some(agent);
     }
 
-    fn render(&mut self, params: &mut RenderParams) -> Option<Cursor> {
+    fn render(&mut self, params: &mut RenderParams) -> BehaviorRenderResult {
         let region = self.get_current_region();
         let colors;
         let result;
         
-        if region.is_inside(params.manager.get_mouse_position()) {
+        if region.is_float_inside(params.manager.get_mouse_position()) {
             colors = self.hover_colors;
-            result = Some(Cursor::POINTER);
+            result = BehaviorRenderResult::with_cursor(Cursor::POINTER);
         } else {
             colors = self.base_colors;
-            result = None;
+            result = BehaviorRenderResult::without_cursor();
         }
 
         if self.region.should_clear_remaining(&self.text_model, params) {
             self.text_model.get_font().fill_rect(self.region.get_max_region(), colors.background_color);
         }
 
-        self.text_model.render(region.get_min_x(), region.get_min_y(), region.get_height(), colors);
+        self.text_model.render(region.get_float_min_x(), region.get_float_min_y(), region.get_float_height(), colors);
         result
     }
 
     fn get_cursor(&mut self, params: &mut CursorParams) -> Option<Cursor> {
         let region = self.get_current_region();
-        if region.is_inside(params.manager.get_mouse_position()) {
+        if region.is_float_inside(params.manager.get_mouse_position()) {
             Some(Cursor::POINTER)
         } else {
             None
@@ -194,7 +193,7 @@ impl ComponentBehavior for ButtonTextRenderController {
         let region = self.get_current_region();
         let prev_mouse = params.manager.get_mouse_position();
         let next_mouse = params.manager.to_gl_coords(params.event.get_new_position());
-        if region.is_inside(prev_mouse) != region.is_inside(next_mouse) {
+        if region.is_float_inside(prev_mouse) != region.is_float_inside(next_mouse) {
             self.request_render();
         }
     }
