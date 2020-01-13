@@ -225,9 +225,9 @@ impl ComponentBehavior for EditTextRenderController {
     }
 
     fn render(&mut self, params: &mut RenderParams) -> BehaviorRenderResult {
-        let region = self.get_max_region();
+        let region = self.get_current_region();
         let colors;
-        let result = match region.is_float_inside(params.manager.get_mouse_position()) {
+        let result = match self.get_max_region().is_float_inside(params.manager.get_mouse_position()) {
             true => BehaviorRenderResult::with_cursor(Cursor::TEXT),
             false => BehaviorRenderResult::without_cursor()
         };
