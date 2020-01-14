@@ -276,9 +276,11 @@ impl ComponentBehavior for EditTextRenderController {
         }
     }
 
-    fn mouse_click(&mut self, params: &mut MouseClickParams) {
-        self.active = self.region.get_max_region().is_float_inside(params.manager.get_mouse_position()) && !self.active;
+    fn mouse_click(&mut self, params: &mut MouseClickParams) -> bool {
+        let mouse_inside = self.region.get_max_region().is_float_inside(params.manager.get_mouse_position());
+        self.active = mouse_inside && !self.active;
         self.agent().borrow_mut().request_render();
+        mouse_inside
     }
 
     fn key_down(&mut self, params: &mut KeyDownParams) -> bool {
