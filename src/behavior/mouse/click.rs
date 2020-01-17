@@ -35,7 +35,7 @@ impl ClickActionBehavior {
 
 impl ComponentBehavior for ClickActionBehavior {
 
-    fn attach(&mut self, agent: &mut LayerAgent){
+    fn attach(&mut self, agent: &mut dyn LayerAgent){
         agent.claim_mouse_click_space(self.render_controller.borrow().get_max_region()).expect("Should have click space for ClickActionBehavior");
     }
 

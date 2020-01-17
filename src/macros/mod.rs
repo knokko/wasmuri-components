@@ -11,7 +11,7 @@ use wasmuri_core::util::Region;
 use wasmuri_text::Font;
 
 pub fn add_simple_text_button<C: FnMut(&mut ComponentAgent, &mut dyn TextRenderController, &mut MouseClickParams) + 'static>
-        (layer: &mut Layer, min_x: i32, min_y: i32, max_x: i32, max_y: i32, 
+        (layer: &mut dyn Layer, min_x: i32, min_y: i32, max_x: i32, max_y: i32, 
         text: &str, button_color: Color, font: &Rc<Font>, alignment: TextAlignment, on_click: C) {
 
     layer.add_component(TextButton::celled(ButtonTextRenderController::simple_tuple(text, font,
@@ -20,7 +20,7 @@ pub fn add_simple_text_button<C: FnMut(&mut ComponentAgent, &mut dyn TextRenderC
     ), Box::new(on_click)));
 }
 
-pub fn add_simple_edit_field(layer: &mut Layer, min_x: i32, min_y: i32, max_x: i32, max_y: i32, initial_text: &str, font: &Rc<Font>) 
+pub fn add_simple_edit_field(layer: &mut dyn Layer, min_x: i32, min_y: i32, max_x: i32, max_y: i32, initial_text: &str, font: &Rc<Font>) 
         -> Rc<RefCell<TextEditField>> {
 
     let field_cell = TextEditField::celled(EditTextRenderController::simple_tuple(initial_text, &font, 

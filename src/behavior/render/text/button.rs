@@ -137,7 +137,7 @@ impl ButtonTextRenderController {
 
 impl ComponentBehavior for ButtonTextRenderController {
 
-    fn attach(&mut self, agent: &mut LayerAgent){
+    fn attach(&mut self, agent: &mut dyn LayerAgent){
         agent.claim_mouse_move_space(self.region.get_max_region());
         agent.claim_render_space(self.region.get_max_region(), RenderTrigger::Request, 
                 determine_render_opacity(vec![self.base_colors, self.hover_colors]), 

@@ -63,7 +63,7 @@ impl SimpleTextRenderController {
 
 impl ComponentBehavior for SimpleTextRenderController {
 
-    fn attach(&mut self, agent: &mut LayerAgent){
+    fn attach(&mut self, agent: &mut dyn LayerAgent){
         agent.claim_render_space(self.region.get_max_region(), RenderTrigger::Request, determine_render_opacity(vec![self.colors]), 
                 RenderPhase::Text).expect("Should have render space for SimpleTextRenderHelper");
     }
