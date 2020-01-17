@@ -1,4 +1,4 @@
-use crate::behavior::render::TextRenderController;
+use crate::behavior::TextRenderController;
 
 use std::cell::RefCell;
 use std::rc::*;
@@ -6,8 +6,6 @@ use std::rc::*;
 use std::convert::AsMut;
 
 use wasmuri_container::*;
-use wasmuri_container::layer::*;
-use wasmuri_container::params::*;
 
 pub struct ClickActionBehavior {
 

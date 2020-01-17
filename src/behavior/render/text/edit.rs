@@ -3,16 +3,9 @@ use std::rc::Rc;
 
 use unicode_segmentation::UnicodeSegmentation;
 
-use wasmuri_container::Cursor;
-use wasmuri_container::layer::*;
-use wasmuri_container::params::*;
-
+use wasmuri_container::*;
 use wasmuri_core::color::*;
-
-use wasmuri_text::{
-    Font,
-    TextModel
-};
+use wasmuri_text::*;
 
 use super::*;
 

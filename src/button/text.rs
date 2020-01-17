@@ -1,12 +1,9 @@
-use crate::behavior::render::TextRenderController;
-use crate::behavior::mouse::ClickActionBehavior;
+use crate::behavior::*;
 
 use std::cell::RefCell;
 use std::rc::*;
 
 use wasmuri_container::*;
-use wasmuri_container::layer::*;
-use wasmuri_container::params::*;
 
 pub struct TextButton {
 

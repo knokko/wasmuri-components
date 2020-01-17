@@ -1,4 +1,4 @@
-use crate::behavior::render::TextRenderController;
+use crate::behavior::TextRenderController;
 
 use std::cell::RefCell;
 use std::rc::*;

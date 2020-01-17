@@ -1,14 +1,13 @@
 use std::cell::RefCell;
 use std::rc::Rc;
 
-use crate::behavior::render::*;
-use crate::button::text::TextButton;
-use crate::input::text::TextEditField;
-use wasmuri_container::Component;
-use wasmuri_container::layer::*;
+use crate::behavior::*;
+use crate::button::TextButton;
+use crate::input::TextEditField;
+
+use wasmuri_container::*;
 use wasmuri_core::color::*;
 use wasmuri_core::util::Region;
-use wasmuri_container::params::MouseClickParams;
 use wasmuri_text::Font;
 
 pub fn add_simple_text_button<C: FnMut(&mut ComponentAgent, &mut dyn TextRenderController, &mut MouseClickParams) + 'static>

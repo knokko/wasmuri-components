@@ -1,4 +1,4 @@
-use wasmuri_container::params::RenderParams;
+use wasmuri_container::RenderParams;
 use wasmuri_core::util::Region;
 
 use wasmuri_text::TextModel;

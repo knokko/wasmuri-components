@@ -11,7 +11,6 @@ pub use location::*;
 use std::rc::*;
 
 use wasmuri_container::*;
-use wasmuri_container::layer::RenderOpacity;
 use wasmuri_core::util::Region;
 use wasmuri_core::color::*;
 use wasmuri_text::TextModel;

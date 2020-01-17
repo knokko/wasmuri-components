@@ -1,4 +1,4 @@
-use crate::behavior::render::*;
+use crate::behavior::*;
 
 use std::cell::RefCell;
 use std::rc::*;

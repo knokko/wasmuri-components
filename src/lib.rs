@@ -1,5 +1,11 @@
-pub mod passive;
-pub mod button;
-pub mod behavior;
-pub mod input;
-pub mod macros;
+mod passive;
+mod button;
+mod behavior;
+mod input;
+mod macros;
+
+pub use passive::*;
+pub use button::*;
+pub use behavior::*;
+pub use input::*;
+pub use macros::*;
