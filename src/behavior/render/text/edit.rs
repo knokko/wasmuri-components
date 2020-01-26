@@ -20,6 +20,7 @@ pub struct EditTextRenderController {
     active_colors: TextColors,
 
     active: bool,
+    mouse_over: bool,
     current_text: String
 }
 
@@ -60,6 +61,8 @@ impl EditTextRenderController {
             active_colors,
 
             active: false,
+            // TODO Handle the case where mouse_over should be true initially
+            mouse_over: false,
             current_text: text.to_string()
         }
     }
@@ -206,7 +209,7 @@ impl ComponentBehavior for EditTextRenderController {
                 determine_render_opacity(vec![self.base_colors, self.hover_colors, self.active_colors]), 
                 RenderPhase::Text).expect("Should have render space for EditTextRenderController");
         agent.make_key_down_listener(10);
-        agent.make_mouse_click_listener();
+        agent.claim_mouse_click_space(self.region.get_max_region()).expect("Should have click space for EditTextRenderController");
     }
 
     fn set_agent(&mut self, agent: Weak<RefCell<ComponentAgent>>){
@@ -219,15 +222,16 @@ impl ComponentBehavior for EditTextRenderController {
 
     fn render(&mut self, params: &mut RenderParams) -> BehaviorRenderResult {
         let region = self.get_current_region();
+        let actions = vec![PassedRenderAction::new(region)];
         let colors;
-        let result = match self.get_max_region().is_float_inside(params.manager.get_mouse_position()) {
-            true => BehaviorRenderResult::with_cursor(Cursor::TEXT),
-            false => BehaviorRenderResult::without_cursor()
+        let result = match self.mouse_over {
+            true => BehaviorRenderResult::with_cursor(Cursor::TEXT, actions),
+            false => BehaviorRenderResult::without_cursor(actions)
         };
         
         if self.active {
             colors = self.active_colors;
-        } else if result.has_cursor() {
+        } else if self.mouse_over {
             colors = self.hover_colors;
         } else {
             colors = self.base_colors;
@@ -249,9 +253,8 @@ impl ComponentBehavior for EditTextRenderController {
         result
     }
 
-    fn get_cursor(&mut self, params: &mut CursorParams) -> Option<Cursor> {
-        let region = self.get_max_region();
-        if region.is_float_inside(params.manager.get_mouse_position()) {
+    fn get_cursor(&mut self, _params: &mut CursorParams) -> Option<Cursor> {
+        if self.mouse_over {
             Some(Cursor::TEXT)
         } else {
             None
@@ -259,21 +262,23 @@ impl ComponentBehavior for EditTextRenderController {
     }
 
     fn mouse_move(&mut self, params: &mut MouseMoveParams) {
-        if !self.active {
-            let region = self.get_max_region();
-            let prev_mouse = params.manager.get_mouse_position();
-            let next_mouse = params.manager.to_gl_coords(params.event.get_new_position());
-            if region.is_float_inside(prev_mouse) != region.is_float_inside(next_mouse) {
-                self.agent().borrow_mut().request_render();
-            }
+        let region = self.get_max_region();
+        let new_mouse_over = params.new_mouse_pos.is_some() && region.is_float_inside(params.new_mouse_pos.unwrap());
+
+        if !self.active && self.mouse_over != new_mouse_over {
+            self.agent().borrow_mut().request_render();
         }
+        self.mouse_over = new_mouse_over;
     }
 
-    fn mouse_click(&mut self, params: &mut MouseClickParams) -> bool {
-        let mouse_inside = self.region.get_max_region().is_float_inside(params.manager.get_mouse_position());
-        self.active = mouse_inside && !self.active;
+    fn mouse_click_inside(&mut self, _params: &mut MouseClickParams) {
+        self.active = !self.active;
         self.agent().borrow_mut().request_render();
-        mouse_inside
+    }
+
+    fn mouse_click_outside(&mut self, _params: &mut MouseClickOutParams) {
+        self.active = false;
+        self.agent().borrow_mut().request_render();
     }
 
     fn key_down(&mut self, params: &mut KeyDownParams) -> bool {

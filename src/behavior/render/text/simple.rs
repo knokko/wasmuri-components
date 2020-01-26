@@ -82,7 +82,7 @@ impl ComponentBehavior for SimpleTextRenderController {
             self.text_model.get_font().fill_rect(self.get_max_region(), self.colors.background_color);
         }
         self.text_model.render(region.get_float_min_x(), region.get_float_min_y(), region.get_float_height(), self.colors);
-        BehaviorRenderResult::without_cursor()
+        BehaviorRenderResult::without_cursor(vec![PassedRenderAction::new(region)])
     }
 
     fn get_cursor(&mut self, _params: &mut CursorParams) -> Option<Cursor> {

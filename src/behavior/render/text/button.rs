@@ -14,7 +14,9 @@ pub struct ButtonTextRenderController {
     text_model: TextModel,
 
     base_colors: TextColors,
-    hover_colors: TextColors
+    hover_colors: TextColors,
+
+    mouse_over: bool,
 }
 
 fn lighten_component(component: u8) -> u8 {
@@ -38,7 +40,10 @@ impl ButtonTextRenderController {
             text_model: Rc::clone(font).create_text_model(text),
 
             base_colors,
-            hover_colors
+            hover_colors,
+
+            // TODO Handle the case where the mouse hovers over it right away
+            mouse_over: false
         }
     }
 
@@ -154,15 +159,16 @@ impl ComponentBehavior for ButtonTextRenderController {
 
     fn render(&mut self, params: &mut RenderParams) -> BehaviorRenderResult {
         let region = self.get_current_region();
+        let actions = vec![PassedRenderAction::new(region)];
         let colors;
         let result;
         
-        if region.is_float_inside(params.manager.get_mouse_position()) {
+        if self.mouse_over {
             colors = self.hover_colors;
-            result = BehaviorRenderResult::with_cursor(Cursor::POINTER);
+            result = BehaviorRenderResult::with_cursor(Cursor::POINTER, actions);
         } else {
             colors = self.base_colors;
-            result = BehaviorRenderResult::without_cursor();
+            result = BehaviorRenderResult::without_cursor(actions);
         }
 
         if self.region.should_clear_remaining(&self.text_model, params) {
@@ -173,9 +179,8 @@ impl ComponentBehavior for ButtonTextRenderController {
         result
     }
 
-    fn get_cursor(&mut self, params: &mut CursorParams) -> Option<Cursor> {
-        let region = self.get_current_region();
-        if region.is_float_inside(params.manager.get_mouse_position()) {
+    fn get_cursor(&mut self, _params: &mut CursorParams) -> Option<Cursor> {
+        if self.mouse_over {
             Some(Cursor::POINTER)
         } else {
             None
@@ -184,11 +189,12 @@ impl ComponentBehavior for ButtonTextRenderController {
 
     fn mouse_move(&mut self, params: &mut MouseMoveParams) {
         let region = self.get_current_region();
-        let prev_mouse = params.manager.get_mouse_position();
-        let next_mouse = params.manager.to_gl_coords(params.event.get_new_position());
-        if region.is_float_inside(prev_mouse) != region.is_float_inside(next_mouse) {
+        let next_mouse = params.new_mouse_pos;
+        let new_mouse_over = next_mouse.is_some() && region.is_float_inside(next_mouse.unwrap());
+        if self.mouse_over != new_mouse_over {
             self.request_render();
         }
+        self.mouse_over = new_mouse_over;
     }
 }
 
