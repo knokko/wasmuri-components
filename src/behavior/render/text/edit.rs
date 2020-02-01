@@ -32,19 +32,19 @@ fn lighten_color(color: Color) -> Color {
     Color::from_rgba(lighten_component(color.get_red()), lighten_component(color.get_green()), lighten_component(color.get_blue()), lighten_component(color.get_alpha()))
 }
 
-fn lighten_colors(colors: TextColors) -> TextColors {
+fn to_active_colors(colors: TextColors) -> TextColors {
     TextColors::new(colors.fill_color, colors.stroke_color, lighten_color(colors.background_color))
 }
 
 fn darken_component(component: u8) -> u8 {
-    ((component as u16 * 5) / 6) as u8
+    ((component as u16 * 19) / 20) as u8
 }
 
 fn darken_color(color: Color) -> Color {
     Color::from_rgba(darken_component(color.get_red()), darken_component(color.get_green()), darken_component(color.get_blue()), color.get_alpha())
 }
 
-fn darken_colors(colors: TextColors) -> TextColors {
+fn to_hover_colors(colors: TextColors) -> TextColors {
     TextColors::new(colors.fill_color, colors.stroke_color, darken_color(colors.background_color))
 }
 
@@ -72,7 +72,7 @@ impl EditTextRenderController {
     }
 
     pub fn simple(text: &str, font: &Rc<Font>, region: TextRegionProps, colors: TextColors) -> EditTextRenderController {
-        Self::new(text, font, region, colors, darken_colors(colors), lighten_colors(colors))
+        Self::new(text, font, region, colors, to_hover_colors(colors), to_active_colors(colors))
     }
 
     pub fn simple_celled(text: &str, font: &Rc<Font>, region: TextRegionProps, colors: TextColors) -> Rc<RefCell<EditTextRenderController>> {
@@ -174,8 +174,8 @@ impl EditTextRenderController {
 
     pub fn set_colors(&mut self, new_colors: TextColors){
         self.base_colors = new_colors;
-        self.hover_colors = darken_colors(new_colors);
-        self.active_colors = lighten_colors(new_colors);
+        self.hover_colors = to_hover_colors(new_colors);
+        self.active_colors = to_active_colors(new_colors);
         self.agent().borrow_mut().request_render();
     }
 

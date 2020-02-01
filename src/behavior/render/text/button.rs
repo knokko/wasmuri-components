@@ -20,7 +20,7 @@ pub struct ButtonTextRenderController {
 }
 
 fn lighten_component(component: u8) -> u8 {
-    ((component as u16 + 255) / 2) as u8
+    ((component as u16 * 2 + 255) / 3) as u8
 }
 
 fn lighten_color(color: Color) -> Color {
