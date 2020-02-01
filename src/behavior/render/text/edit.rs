@@ -283,10 +283,10 @@ impl ComponentBehavior for EditTextRenderController {
 
     fn key_down(&mut self, params: &mut KeyDownParams) -> bool {
         if self.is_active() {
-            let key = params.event.key_event.key();
+            let key = params.keys.get_key();
             let mut char_counter = 0;
             {
-                let mut chars = UnicodeSegmentation::graphemes(key.as_str(), true);
+                let mut chars = UnicodeSegmentation::graphemes(key, true);
                 let mut next_char = chars.next();
                 while next_char.is_some() {
                     char_counter += 1;
