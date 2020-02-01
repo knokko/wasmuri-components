@@ -11,8 +11,7 @@ pub use location::*;
 use std::rc::*;
 
 use wasmuri_container::*;
-use wasmuri_core::util::Region;
-use wasmuri_core::color::*;
+use wasmuri_core::*;
 use wasmuri_text::TextModel;
 
 pub trait TextRenderController {

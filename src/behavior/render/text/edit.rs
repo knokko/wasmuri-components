@@ -4,7 +4,7 @@ use std::rc::Rc;
 use unicode_segmentation::UnicodeSegmentation;
 
 use wasmuri_container::*;
-use wasmuri_core::color::*;
+use wasmuri_core::*;
 use wasmuri_text::*;
 
 use super::*;

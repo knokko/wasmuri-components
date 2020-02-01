@@ -1,5 +1,5 @@
 use wasmuri_container::RenderParams;
-use wasmuri_core::util::Region;
+use wasmuri_core::Region;
 
 use wasmuri_text::TextModel;
 

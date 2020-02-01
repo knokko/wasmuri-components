@@ -6,8 +6,7 @@ use crate::button::TextButton;
 use crate::input::TextEditField;
 
 use wasmuri_container::*;
-use wasmuri_core::color::*;
-use wasmuri_core::util::Region;
+use wasmuri_core::*;
 use wasmuri_text::Font;
 
 pub fn add_simple_text_button<C: FnMut(&mut ComponentAgent, &mut dyn TextRenderController, &mut MouseClickParams) + 'static>
