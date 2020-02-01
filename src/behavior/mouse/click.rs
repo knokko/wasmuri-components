@@ -48,10 +48,12 @@ impl ComponentBehavior for ClickActionBehavior {
     }
 
     fn mouse_click_inside(&mut self, params: &mut MouseClickParams) {
-        let mut render_controller = self.render_controller.borrow_mut();
-        if render_controller.get_current_region().is_float_inside(params.mouse_pos) {
-            let agent_cell = self.get_agent().upgrade().expect("Agent shouldn't have been dropped");
-            self.on_click.as_mut()(&mut agent_cell.borrow_mut(), &mut *render_controller, params);
+        if params.click.get_button() == 0 {
+            let mut render_controller = self.render_controller.borrow_mut();
+            if render_controller.get_current_region().is_float_inside(params.mouse_pos) {
+                let agent_cell = self.get_agent().upgrade().expect("Agent shouldn't have been dropped");
+                self.on_click.as_mut()(&mut agent_cell.borrow_mut(), &mut *render_controller, params);
+            }
         }
     }
 }
