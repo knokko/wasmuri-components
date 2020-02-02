@@ -210,6 +210,9 @@ impl ComponentBehavior for EditTextRenderController {
                 RenderPhase::Text).expect("Should have render space for EditTextRenderController");
         agent.make_key_down_listener(10);
         agent.claim_mouse_click_space(self.region.get_max_region()).expect("Should have click space for EditTextRenderController");
+        agent.make_copy_listener(50);
+        agent.make_paste_listener(50);
+        agent.make_cut_listener(50);
     }
 
     fn set_agent(&mut self, agent: Weak<RefCell<ComponentAgent>>){
@@ -282,7 +285,7 @@ impl ComponentBehavior for EditTextRenderController {
     }
 
     fn key_down(&mut self, params: &mut KeyDownParams) -> bool {
-        if self.is_active() {
+        if self.is_active() && !params.keys.is_control_down() {
             let key = params.keys.get_key();
             let mut char_counter = 0;
             {
@@ -318,6 +321,40 @@ impl ComponentBehavior for EditTextRenderController {
             true
         } else {
             false
+        }
+    }
+
+    fn on_copy(&mut self) -> Option<ClipboardData> {
+        match self.is_active() {
+            true => match self.current_text.is_empty() {
+                false => Some(ClipboardData::Text(self.current_text.clone())),
+                true => None
+            }, false => None
+        }
+    }
+
+    fn on_paste(&mut self, clipboard: &ClipboardData) -> bool {
+        match self.is_active() {
+            true => match clipboard {
+                ClipboardData::Text(text_to_paste) => {
+                    self.current_text += text_to_paste;
+                    self.update_text();
+                    true
+                }
+            }, false => false
+        }
+    }
+
+    fn on_cut(&mut self) -> Option<ClipboardData> {
+        match self.is_active() {
+            true => match self.current_text.is_empty() {
+                false => {
+                    let result = Some(ClipboardData::Text(self.current_text.clone()));
+                    self.current_text = "".to_string();
+                    self.update_text();
+                    result
+                }, true => None
+            }, false => None
         }
     }
 }
